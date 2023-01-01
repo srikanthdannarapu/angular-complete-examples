@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@angular/compiler-cli": "^9.0.0",
-    "@angular-devkit/build-angular": "~0.900.0",
+    "@angular-devkit/build-angular": "~15.0.4",
     "typescript": "3.7.5",
     "@angular/cli": "^9.0.0",
     "@angular/language-service": "^9.0.0",
