@@ -1,6 +1,7 @@
 # angular-complete-examples
 
 import java.sql.*;
+import java.util.Arrays;
 
 public class CompareValues {
 
@@ -8,25 +9,21 @@ public class CompareValues {
         // Set up a connection to your Oracle database
         Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/ORCL", "username", "password");
 
-        // Create a statement object
-        Statement stmt = conn.createStatement();
+        // Create a prepared statement with a parameterized query
+        int numValues = 1000000;
+        String sql = "SELECT t.* FROM table_name t WHERE t.concatenated_columns IN (";
+        sql += String.join(",", Collections.nCopies(numValues, "?")) + ")";
+        PreparedStatement pstmt = conn.prepareStatement(sql);
 
-        // Create a temporary table to store the values to compare
-        stmt.execute("CREATE GLOBAL TEMPORARY TABLE temp_values (value VARCHAR2(50)) ON COMMIT PRESERVE ROWS");
-
-        // Insert the values to compare into the temporary table
-        String[] valuesToCompare = {"value1", "value2", ..., "value1000000"};
-        PreparedStatement pstmt = conn.prepareStatement("INSERT INTO temp_values VALUES (?)");
-        for (String value : valuesToCompare) {
-            pstmt.setString(1, value);
-            pstmt.addBatch();
+        // Set the parameter values using a loop
+        String[] valuesToCompare = new String[numValues];
+        Arrays.fill(valuesToCompare, "value");
+        for (int i = 0; i < valuesToCompare.length; i++) {
+            pstmt.setString(i + 1, valuesToCompare[i]);
         }
-        pstmt.executeBatch();
 
-        // Query the original table using a join with the temporary table
-        ResultSet rs = stmt.executeQuery("SELECT t.* FROM table_name t JOIN temp_values v ON t.concatenated_columns = v.value");
-
-        // Process the query results
+        // Execute the query and process the results
+        ResultSet rs = pstmt.executeQuery();
         while (rs.next()) {
             // Retrieve the columns you need from the result set
             String column1 = rs.getString("column1");
@@ -36,14 +33,9 @@ public class CompareValues {
             System.out.println("Match found: " + column1 + ", " + column2 + ", " + column3);
         }
 
-        // Clean up the temporary table
-        stmt.execute("DROP TABLE temp_values");
-
         // Close the statement, result set, and connection objects
         rs.close();
         pstmt.close();
-        stmt.close();
         conn.close();
     }
 }
-
