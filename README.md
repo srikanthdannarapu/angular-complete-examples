@@ -1,22 +1,48 @@
-import datetime
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
-date_string = "FOO0320"
-month = date_string[-2:]
-day = date_string[-4:-2]
-year = "2023"
-date_string = f"{day}-{month}-{year}"
-date = datetime.datetime.strptime(date_string, "%d-%m-%Y").date()
-formatted_date = date.strftime("%d-%b-%Y")
-print(formatted_date)
+public class DateParser {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
-
-
-
-
-import datetime
-
-formatted_date = "20-Mar-2023"
-date = datetime.datetime.strptime(formatted_date, "%d-%b-%Y").date()
-next_day = date + datetime.timedelta(days=1)
-formatted_next_day = next_day.strftime("%d-%b-%Y")
-print(formatted_next_day)
+    public static void main(String[] args) {
+        String dateString1 = "FOO0320";
+        String dateString2 = "TESSSSS0325";
+        String year = "2023";
+        
+        // Parse the first date string
+        LocalDate date1 = parseDateString(dateString1, year);
+        
+        // Parse the second date string
+        LocalDate date2 = parseDateString(dateString2, year);
+        
+        // Get the next day for the first date
+        LocalDate nextDay1 = date1.plusDays(1);
+        String formattedNextDay1 = nextDay1.format(FORMATTER);
+        
+        // Get the next day for the second date
+        LocalDate nextDay2 = date2.plusDays(1);
+        String formattedNextDay2 = nextDay2.format(FORMATTER);
+        
+        // Output the results
+        System.out.println("Date 1: " + date1);
+        System.out.println("Next day for date 1: " + formattedNextDay1);
+        System.out.println("Date 2: " + date2);
+        System.out.println("Next day for date 2: " + formattedNextDay2);
+    }
+    
+    private static LocalDate parseDateString(String dateString, String year) {
+        String day = dateString.substring(dateString.length() - 2);
+        String month = dateString.substring(dateString.length() - 4, dateString.length() - 2);
+        String dateStr = day + "-" + getMonthName(month) + "-" + year;
+        return LocalDate.parse(dateStr, FORMATTER);
+    }
+    
+    private static String getMonthName(String month) {
+        String[] months = {
+            "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        };
+        int monthNumber = Integer.parseInt(month);
+        return months[monthNumber];
+    }
+}
