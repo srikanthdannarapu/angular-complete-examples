@@ -1,69 +1,67 @@
-import java.sql.*;
-import java.util.HashSet;
+Connection conn1 = DriverManager.getConnection("jdbc:oracle:thin:@//hostname1:port1/DB1", "username1", "password1");
+Connection conn2 = DriverManager.getConnection("jdbc:oracle:thin:@//hostname2:port2/DB2", "username2", "password2");
 
-public class CompareNames {
-    public static void main(String[] args) throws SQLException {
-        // Set up a connection to the first Oracle database
-        Connection conn1 = DriverManager.getConnection("jdbc:oracle:thin:@//hostname1:port1/DB1", "username1", "password1");
+// Fetch employee names from DB1 in batches
+PreparedStatement stmt1 = conn1.prepareStatement("SELECT emp_name FROM employee ORDER BY emp_name OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+int batchSize1 = 1000; // Number of employee records to fetch at a time
+int offset1 = 0;
 
-        // Set up a connection to the second Oracle database
-        Connection conn2 = DriverManager.getConnection("jdbc:oracle:thin:@//hostname2:port2/DB2", "username2", "password2");
+List<String> employeeNames = new ArrayList<>();
 
-        // Create a statement to execute the first query on the first database
-        Statement stmt1 = conn1.createStatement();
-        ResultSet rs1 = stmt1.executeQuery("SELECT employee_name FROM employee_table");
+while (true) {
+    stmt1.setInt(1, offset1);
+    stmt1.setInt(2, batchSize1);
+    ResultSet rs1 = stmt1.executeQuery();
+    
+    if (!rs1.next()) {
+        break; // No more employee records
+    }
 
-        // Create a set to hold the student names
-        HashSet<String> studentNames = new HashSet<>();
+    do {
+        employeeNames.add(rs1.getString("emp_name"));
+    } while (rs1.next());
 
-        // Create a statement to execute the query to retrieve all student names from the second database
-        Statement stmt2 = conn2.createStatement();
-        ResultSet rs2 = stmt2.executeQuery("SELECT student_name FROM student_table");
+    rs1.close();
+    offset1 += batchSize1;
+}
 
-        // Load all the student names into the set
-        while (rs2.next()) {
-            String studentName = rs2.getString("student_name");
-            studentNames.add(studentName);
+stmt1.close();
+
+// Fetch student names from DB2 in batches
+PreparedStatement stmt2 = conn2.prepareStatement("SELECT student_name FROM student ORDER BY student_name OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+int batchSize2 = 1000; // Number of student records to fetch at a time
+int offset2 = 0;
+
+List<String> studentNames = new ArrayList<>();
+
+while (true) {
+    stmt2.setInt(1, offset2);
+    stmt2.setInt(2, batchSize2);
+    ResultSet rs2 = stmt2.executeQuery();
+    
+    if (!rs2.next()) {
+        break; // No more student records
+    }
+
+    do {
+        studentNames.add(rs2.getString("student_name"));
+    } while (rs2.next());
+
+    rs2.close();
+    offset2 += batchSize2;
+}
+
+stmt2.close();
+conn2.close();
+conn1.close();
+
+// Compare employeeNames with studentNames and do something
+for (String empName : employeeNames) {
+    for (String studentName : studentNames) {
+        if (empName.equalsIgnoreCase(studentName)) {
+            // Perform some action based on the comparison
+            System.out.println("Match found: " + empName);
+            break;
         }
-
-        // Set up pagination parameters for the employee names
-        int batchSize = 10000;
-        int offset = 0;
-
-        // Compare the results
-        while (true) {
-            // Create a new statement for each batch of employee names
-            Statement stmt3 = conn1.createStatement();
-            stmt3.setMaxRows(batchSize);
-            ResultSet rs3 = stmt3.executeQuery("SELECT employee_name FROM employee_table ORDER BY employee_name OFFSET " + offset);
-
-            // Process the current batch of employee names
-            while (rs3.next()) {
-                String empName = rs3.getString("employee_name");
-                if (studentNames.contains(empName)) {
-                    System.out.println("Match found: " + empName);
-                } else {
-                    System.out.println("No match found for: " + empName);
-                }
-            }
-
-            // Close the result set and statement for the current batch
-            rs3.close();
-            stmt3.close();
-
-            // Move to the next batch of employee names, or exit the loop if there are no more records
-            offset += batchSize;
-            if (rs3.getRow() < batchSize) {
-                break;
-            }
-        }
-
-        // Close the result sets and statements for the employee and student queries, and the connection objects
-        rs1.close();
-        stmt1.close();
-        rs2.close();
-        stmt2.close();
-        conn1.close();
-        conn2.close();
     }
 }
