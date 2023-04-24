@@ -1,30 +1,20 @@
-import javax.sql.DataSource;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.stereotype.Service;
 
-@Configuration
-public class AppConfig {
+import javax.sql.DataSource;
+import java.util.List;
 
-    @Autowired
-    private DataSource dataSource;
+@Service
+public class LargeTableService {
 
-    @Bean
-    public JdbcTemplate jdbcTemplate() {
-        return new JdbcTemplate(dataSource);
+    private final JdbcTemplate jdbcTemplate;
+
+    public LargeTableService(DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@localhost:1521:ORCL");
-        dataSource.setUsername("username");
-        dataSource.setPassword("password");
-        return dataSource;
+    public List<MyRecord> getRecords(int limit) {
+        String sql = "SELECT * FROM mytable LIMIT ?";
+        return jdbcTemplate.query(sql, new Object[]{limit}, new MyRecordRowMapper());
     }
-
 }
