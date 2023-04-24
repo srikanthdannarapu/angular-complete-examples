@@ -1,63 +1,66 @@
-@Service
-public class LargeTableService {
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-    private final JdbcTemplate jdbcTemplate;
+    <groupId>com.example</groupId>
+    <artifactId>large-table-service</artifactId>
+    <version>1.0.0</version>
 
-    @Autowired
-    public LargeTableService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    <properties>
+        <java.version>11</java.version>
+        <spring-boot.version>2.6.3</spring-boot.version>
+    </properties>
 
-    public void processLargeTable() {
-        // Set fetch size to control how many rows are retrieved at once
-        jdbcTemplate.setFetchSize(10000);
+    <dependencies>
+        <!-- Spring Boot dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
 
-        // Query for the large result set
-        jdbcTemplate.query("SELECT * FROM large_table", rs -> {
-            // Create a batch update object
-            BatchPreparedStatementSetter batchSetter = new MyBatchPreparedStatementSetter(rs);
+        <!-- Oracle JDBC driver -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>19.3.0.0</version>
+        </dependency>
 
-            // Process the result set in batches
-            int rowCount = 0;
-            while (rs.next()) {
-                // Increment row count
-                rowCount++;
+        <!-- Test dependencies (optional) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${spring-boot.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-                // Add row to batch update object
-                batchSetter.setValues(jdbcTemplate.getDataSource().getConnection().prepareStatement("INSERT INTO processed_rows (id) VALUES (?)"), rowCount);
+    <build>
+        <plugins>
+            <!-- Maven compiler plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <release>${java.version}</release>
+                </configuration>
+            </plugin>
 
-                // If we have processed 10000 rows, execute the batch update and reset the batch setter
-                if (rowCount % 10000 == 0) {
-                    jdbcTemplate.batchUpdate(batchSetter);
-
-                    // Reset the batch setter
-                    batchSetter = new MyBatchPreparedStatementSetter(rs);
-                }
-            }
-
-            // Execute the final batch update
-            jdbcTemplate.batchUpdate(batchSetter);
-        });
-    }
-
-    private static class MyBatchPreparedStatementSetter implements BatchPreparedStatementSetter {
-
-        private final List<Long> ids = new ArrayList<>();
-
-        public MyBatchPreparedStatementSetter(ResultSet rs) throws SQLException {
-            while (rs.next()) {
-                ids.add(rs.getLong("id"));
-            }
-        }
-
-        @Override
-        public void setValues(PreparedStatement ps, int i) throws SQLException {
-            ps.setLong(1, ids.get(i - 1));
-        }
-
-        @Override
-        public int getBatchSize() {
-            return ids.size();
-        }
-    }
-}
+            <!-- Spring Boot Maven plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
