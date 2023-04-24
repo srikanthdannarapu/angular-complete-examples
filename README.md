@@ -1,20 +1,17 @@
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.jdbc.core.RowMapper;
 
-import javax.sql.DataSource;
-import java.util.List;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-@Service
-public class LargeTableService {
+public class MyRecordRowMapper implements RowMapper<MyRecord> {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public LargeTableService(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
-    public List<MyRecord> getRecords(int limit) {
-        String sql = "SELECT * FROM mytable LIMIT ?";
-        return jdbcTemplate.query(sql, new Object[]{limit}, new MyRecordRowMapper());
+    @Override
+    public MyRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
+        MyRecord record = new MyRecord();
+        record.setId(rs.getInt("id"));
+        record.setColumn1(rs.getString("column1"));
+        record.setColumn2(rs.getString("column2"));
+        // Map other columns as required
+        return record;
     }
 }
