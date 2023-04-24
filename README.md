@@ -1,41 +1,31 @@
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-api</artifactId>
+  <version>1.7.30</version>
+</dependency>
 
-import javax.sql.DataSource;
 
-@Configuration
-public class AppConfig {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    @Bean
-    public DataSource dataSource1() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@//hostname1:port1/service_name1");
-        dataSource.setUsername("username1");
-        dataSource.setPassword("password1");
-        return dataSource;
-    }
+@Service
+public class MyService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MyService.class);
 
-    @Bean
-    public JdbcTemplate jdbcTemplate1() {
-        return new JdbcTemplate(dataSource1());
-    }
-
-    @Bean
-    public DataSource dataSource2() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@//hostname2:port2/service_name2");
-        dataSource.setUsername("username2");
-        dataSource.setPassword("password2");
-        return dataSource;
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate2() {
-        return new JdbcTemplate(dataSource2());
-    }
-
+  public void doSomething() {
+    LOGGER.info("Doing something...");
+  }
 }
+
+
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>myapp.log</file>
+    <encoder>
+      <pattern>%date %-5level [%thread] %logger{35} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <root level="info">
+    <appender-ref ref="FILE" />
+  </root>
+</configuration>
