@@ -59,3 +59,10 @@ public class LargeTableService {
         return results;
     }
 }
+
+
+
+
+
+int numThreads = Math.min(Runtime.getRuntime().availableProcessors(), 10); // Use the minimum of available processors and 10
+ExecutorService executor = Executors.newFixedThreadPool(numThreads);
