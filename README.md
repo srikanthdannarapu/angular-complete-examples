@@ -1,20 +1,12 @@
-import org.springframework.jdbc.core.JdbcTemplate;
-import java.util.Arrays;
-import java.util.List;
+List<String> names = Arrays.asList("John", "Jane", "Bob");
 
-public class MyDAO {
+// Convert String values to SQL VARCHAR2 type
+List<Object> nameParams = names.stream()
+                                .map(name -> new SqlParameterValue(Types.VARCHAR, name))
+                                .collect(Collectors.toList());
 
-    private JdbcTemplate jdbcTemplate;
+String sql = "SELECT * FROM myTable WHERE column1 IN (:names)";
+MapSqlParameterSource parameters = new MapSqlParameterSource();
+parameters.addValue("names", nameParams);
 
-    public MyDAO(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-    public List<MyRecord> getRecordsWithIds(List<Long> ids) {
-        String sql = "SELECT * FROM myTable WHERE column1 IN (" +
-                     String.join(",", Arrays.asList(new String[new ids.size()]).toArray(new String[0])) +
-                     ")";
-        return jdbcTemplate.query(sql, ids.toArray(), new MyRecordRowMapper());
-    }
-
-}
+List<MyRecord> records = jdbcTemplate.query(sql, parameters, new MyRecordRowMapper());
