@@ -1,27 +1,46 @@
-CREATE OR REPLACE PROCEDURE export_to_csv IS
-  CURSOR c_data IS SELECT * FROM your_table;
-  v_file UTL_FILE.FILE_TYPE;
-  v_dir VARCHAR2(100) := 'DIRECTORY_NAME'; -- replace with your directory name
-  v_filename VARCHAR2(100) := 'file.csv';
-  v_separator VARCHAR2(1) := ',';
-BEGIN
-  v_file := UTL_FILE.FOPEN(v_dir, v_filename, 'w', 32767);
-  
-  -- write column headers to file
-  FOR c IN (SELECT COLUMN_NAME FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'YOUR_TABLE' ORDER BY COLUMN_ID) LOOP
-    UTL_FILE.PUT(v_file, c.COLUMN_NAME || v_separator);
-  END LOOP;
-  UTL_FILE.NEW_LINE(v_file);
-  
-  -- write data rows to file
-  FOR r IN c_data LOOP
-    FOR i IN 1..(SELECT COUNT(*) FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'YOUR_TABLE' ORDER BY COLUMN_ID) LOOP
-      UTL_FILE.PUT(v_file, TO_CHAR(r(i)) || v_separator);
-    END LOOP;
-    UTL_FILE.NEW_LINE(v_file);
-  END LOOP;
-  
-  UTL_FILE.FCLOSE(v_file);
-  DBMS_OUTPUT.PUT_LINE('Export complete.');
-END;
-/
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class AppConfig {
+    @Bean
+    public DataSource dataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:oracle:thin:@//localhost:1521/orclpdb1");
+        config.setUsername("myuser");
+        config.setPassword("mypassword");
+        config.setMaximumPoolSize(10);
+        config.setMaxLifetime(1800000);
+        return new HikariDataSource(config);
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+
+
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.3.12</version>
+</dependency>
+
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>5.0.0</version>
+</dependency>
+
+<dependency>
+    <groupId>com.oracle.database.jdbc</groupId>
+    <artifactId>ojdbc10</artifactId>
+    <version>21.3.0.0</version>
+</dependency>
