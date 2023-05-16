@@ -1,18 +1,56 @@
-DECLARE
-   cursor c_employee is
-      select employee_id, first_name, last_name
-      from employees;
-      
-   v_result CLOB;
-BEGIN
-   FOR rec IN c_employee LOOP
-      if v_result is null then
-         v_result := rec.employee_id || ',' || rec.first_name || ',' || rec.last_name;
-      else
-         v_result := v_result || ',' || rec.employee_id || ',' || rec.first_name || ',' || rec.last_name;
-      end if;
-   END LOOP;
-   
-   -- Output the result to the console or any buffer of your choice
-   dbms_output.put_line(v_result);
-END;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class EmployeeConverter {
+
+    public static void main(String[] args) {
+        // Example list of employees
+        List<Employee> employees = List.of(
+                new Employee(1, "John"),
+                new Employee(2, "Alice"),
+                new Employee(3, "Bob"),
+                new Employee(4, "Jane"),
+                new Employee(5, "Mike"),
+                new Employee(6, "Sarah"),
+                new Employee(7, "David"),
+                new Employee(8, "Emily"),
+                new Employee(9, "Tom"),
+                new Employee(10, "Linda"),
+                new Employee(11, "Chris")
+        );
+
+        // Convert the list to a list of lists
+        List<List<Employee>> listsOfEmployees = convertToLists(employees, 5);
+
+        // Print the resulting lists of employees
+        listsOfEmployees.forEach(System.out::println);
+    }
+
+    public static <T> List<List<T>> convertToLists(List<T> originalList, int sublistSize) {
+        int numOfLists = (int) Math.ceil((double) originalList.size() / sublistSize);
+
+        return IntStream.range(0, numOfLists)
+                .mapToObj(i -> originalList.subList(i * sublistSize, Math.min((i + 1) * sublistSize, originalList.size())))
+                .collect(Collectors.toList());
+    }
+
+    static class Employee {
+        private int id;
+        private String name;
+
+        public Employee(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "Employee{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+    }
+}
