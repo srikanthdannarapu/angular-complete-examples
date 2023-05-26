@@ -108,3 +108,12 @@ public class KafkaOutboxConfig {
         return new KafkaOutboxTemplate(kafkaTemplate);
     }
 }
+
+
+
+import org.axonframework.extensions.kafka.outbox.KafkaOutboxTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
+
+import org.axonframework.extensions.springcloud.outbox.SpringCloudOutboxEventPublisher;
+import org.axonframework.extensions.springcloud.store.AxonServerEventStore;
+
