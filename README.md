@@ -117,3 +117,17 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.axonframework.extensions.springcloud.outbox.SpringCloudOutboxEventPublisher;
 import org.axonframework.extensions.springcloud.store.AxonServerEventStore;
 
+
+
+dependencies {
+    // Axon Kafka Outbox
+    implementation 'org.axonframework.extensions.kafka:axon-kafka-outbox:<version>'
+
+    // Spring Kafka
+    implementation 'org.springframework.kafka:spring-kafka:<version>'
+
+    // Axon Spring Cloud Extension
+    implementation 'org.axonframework.extensions.springcloud:axon-spring-cloud-starter:<version>'
+}
+
+
