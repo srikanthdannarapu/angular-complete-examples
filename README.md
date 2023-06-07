@@ -1,133 +1,82 @@
-dependencies {
-    // Spring Boot Starter
-    implementation 'org.springframework.boot:spring-boot-starter'
-
-    // Spring Cloud Stream with Kafka Binder
-    implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
-
-    // Axon Framework
-    implementation 'org.axonframework:axon-spring-boot-starter'
-
-    // Axon Outbox
-    implementation 'org.axonframework.extensions.springcloud:axon-spring-cloud-starter-outbox'
-
-    // Apache Kafka Client
-    implementation 'org.apache.kafka:kafka-clients'
-
-    // Spring Kafka
-    implementation 'org.springframework.kafka:spring-kafka'
-
-    // Axon Server
-    implementation 'org.axonframework:axon-server-connector'
-
-    // Axon Kafka Outbox
-    implementation 'org.axonframework.extensions.kafka:axon-kafka-outbox'
-
-    // Axon Spring Cloud Extension
-    implementation 'org.axonframework.extensions.springcloud:axon-spring-cloud-starter'
-
-    // Spring Boot Test (optional, for testing)
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
-
-
-
-
-
-
-
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.handler.annotation.Payload;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.KafkaMessageListenerContainer;
+import org.springframework.kafka.listener.SeekToCurrentBatchErrorHandler;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Component;
 
-@Component
-public class AxonMessageListener {
+import java.util.Properties;
 
-    private final KafkaOutboxTemplate kafkaOutboxTemplate;
-    private final SpringCloudOutboxEventPublisher outboxEventPublisher;
+@SpringBootApplication
+@EnableKafka
+public class KafkaBatchConsumerApplication {
 
-    @Autowired
-    public AxonMessageListener(KafkaOutboxTemplate kafkaOutboxTemplate,
-                               SpringCloudOutboxEventPublisher outboxEventPublisher) {
-        this.kafkaOutboxTemplate = kafkaOutboxTemplate;
-        this.outboxEventPublisher = outboxEventPublisher;
+    public static void main(String[] args) {
+        SpringApplication.run(KafkaBatchConsumerApplication.class, args);
     }
 
-    @KafkaListener(topics = "<axon-topic>")
-    public void handleMessage(@Payload Message<Employee> message) {
-        Employee employee = message.getPayload();
-        MessageHeaders headers = message.getHeaders();
+    @Component
+    public class KafkaBatchListener {
 
-        // Process the message from the Axon topic
-        System.out.println("Received message from Axon topic:");
-        System.out.println("Payload: " + employee);
-        System.out.println("Headers: " + headers);
-        System.out.println();
+        @Value("${spring.kafka.bootstrap-servers}")
+        private String bootstrapServers;
 
-        // Create a KafkaOutboxMessage and publish it to the Outbox
-        KafkaOutboxMessage outboxMessage = KafkaOutboxMessage.newBuilder()
-                .setKey(headers.getId().toString())
-                .setPayload(employee)
-                .setTopic("<target-topic>") // Specify the target topic for publishing
-                .build();
-        kafkaOutboxTemplate.send(outboxMessage);
+        @Value("${spring.kafka.consumer.group-id}")
+        private String groupId;
 
-        // Publish the Outbox event
-        outboxEventPublisher.publish(outboxMessage);
+        @Value("${spring.kafka.consumer.topic}")
+        private String topic;
+
+        @KafkaListener(topics = "${spring.kafka.consumer.topic}", containerFactory = "kafkaBatchListenerContainerFactory")
+        public void listen(ConsumerRecords<String, String> records, Acknowledgment acknowledgment) {
+            for (ConsumerRecord<String, String> record : records) {
+                // Process the record here
+                System.out.println("Received message: " + record.value());
+            }
+            acknowledgment.acknowledge();
+        }
+
+        public KafkaMessageListenerContainer<String, String> kafkaMessageListenerContainer() {
+            Properties props = new Properties();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+            DefaultKafkaConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
+
+            ContainerProperties containerProperties = new ContainerProperties(topic);
+            containerProperties.setBatchErrorHandler(new SeekToCurrentBatchErrorHandler());
+
+            KafkaMessageListenerContainer<String, String> container = new KafkaMessageListenerContainer<>(consumerFactory, containerProperties);
+            return container;
+        }
+
+        public ConcurrentKafkaListenerContainerFactory<String, String> kafkaBatchListenerContainerFactory() {
+            ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+            factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(consumerConfigs()));
+            factory.setBatchListener(true);
+            factory.setBatchErrorHandler(new SeekToCurrentBatchErrorHandler());
+            return factory;
+        }
+
+        private Map<String, Object> consumerConfigs() {
+            Map<String, Object> props = new HashMap<>();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            return props;
+        }
     }
 }
-
-
-
-
-
-import org.axonframework.extensions.springcloud.outbox.SpringCloudOutboxEventPublisher;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class OutboxEventPublisherConfig {
-
-    @Bean
-    public SpringCloudOutboxEventPublisher outboxEventPublisher(AxonServerEventStore axonServerEventStore) {
-        return new SpringCloudOutboxEventPublisher(axonServerEventStore);
-    }
-}
-
-
-import org.axonframework.extensions.kafka.outbox.KafkaOutboxTemplate;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class KafkaOutboxConfig {
-
-    @Bean
-    public KafkaOutboxTemplate kafkaOutboxTemplate(KafkaTemplate<String, byte[]> kafkaTemplate) {
-        return new KafkaOutboxTemplate(kafkaTemplate);
-    }
-}
-
-
-
-import org.axonframework.extensions.kafka.outbox.KafkaOutboxTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
-
-import org.axonframework.extensions.springcloud.outbox.SpringCloudOutboxEventPublisher;
-import org.axonframework.extensions.springcloud.store.AxonServerEventStore;
-
-
-
-dependencies {
-    // Axon Kafka Outbox
-    implementation 'org.axonframework.extensions.kafka:axon-kafka-outbox:<version>'
-
-    // Spring Kafka
-    implementation 'org.springframework.kafka:spring-kafka:<version>'
-
-    // Axon Spring Cloud Extension
-    implementation 'org.axonframework.extensions.springcloud:axon-spring-cloud-starter:<version>'
-}
-
-
