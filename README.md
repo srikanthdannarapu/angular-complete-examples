@@ -1,4 +1,15 @@
+import org.junit.Test;
+
+import javax.validation.*;
+import javax.validation.constraints.NotNull;
+import java.util.Set;
+
+import static org.junit.Assert.*;
+
 public class TestTest {
+
+    private static ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    private static Validator validator = validatorFactory.getValidator();
 
     @Test
     public void testConstructor_withValidName() {
@@ -13,14 +24,17 @@ public class TestTest {
         assertEquals(validName, test.getName());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testConstructor_withNullName() {
         // Arrange
         String nullName = null;
 
         // Act
-        Test test = new Test(nullName);
+        Set<ConstraintViolation<Test>> violations = validator.validateValue(Test.class, "name", nullName);
 
-        // Expect an exception to be thrown
+        // Assert
+        assertFalse(violations.isEmpty());
+        assertEquals(1, violations.size());
+        assertEquals("may not be null", violations.iterator().next().getMessage());
     }
 }
