@@ -1,46 +1,46 @@
-import org.springframework.core.env.PropertiesPropertySource;
-import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.support.DefaultPropertySourceFactory;
-import org.springframework.core.io.support.EncodedResource;
-import org.springframework.core.io.support.PropertySourceFactory;
-import org.yaml.snakeyaml.Yaml;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
-public class YamlPropertySourceFactory extends DefaultPropertySourceFactory implements PropertySourceFactory {
+@Component
+public class EmployeeReader {
 
-    @Override
-    public PropertySource<?> createPropertySource(String name, EncodedResource resource) throws IOException {
-        if (resource == null) {
-            return super.createPropertySource(name, resource);
-        }
-        Yaml yaml = new Yaml();
-        Object result = yaml.load(resource.getInputStream());
-        if (result instanceof Properties) {
-            return super.createPropertySource(name, resource);
-        } else if (result instanceof Iterable) {
-            Properties properties = new Properties();
-            int index = 0;
-            for (Object object : (Iterable<?>) result) {
-                if (object instanceof Properties) {
-                    properties.putAll((Properties) object);
-                } else {
-                    properties.putAll(getPropertiesFromObject(object, index++));
-                }
+    @Autowired
+    private Environment environment;
+
+    public List<Employee> getEmployees() {
+        List<Employee> employees = new ArrayList<>();
+        int index = 0;
+
+        while (true) {
+            String idKey = "yaml.employees[" + index + "].id";
+            String nameKey = "yaml.employees[" + index + "].name";
+            String ageKey = "yaml.employees[" + index + "].age";
+            String departmentKey = "yaml.employees[" + index + "].department";
+
+            String id = environment.getProperty(idKey);
+            String name = environment.getProperty(nameKey);
+            String age = environment.getProperty(ageKey);
+            String department = environment.getProperty(departmentKey);
+
+            if (id == null || name == null || age == null || department == null) {
+                break;
             }
-            return new PropertiesPropertySource(name, properties);
-        } else {
-            return super.createPropertySource(name, resource);
-        }
-    }
 
-    private Properties getPropertiesFromObject(Object object, int index) {
-        Properties properties = new Properties();
-        if (object instanceof java.util.LinkedHashMap) {
-            java.util.LinkedHashMap<?, ?> map = (java.util.LinkedHashMap<?, ?>) object;
-            map.forEach((key, value) -> properties.put("employees[" + index + "]." + key, value));
+            Employee employee = new Employee();
+            employee.setId(Integer.parseInt(id));
+            employee.setName(name);
+            employee.setAge(Integer.parseInt(age));
+            employee.setDepartment(department);
+
+            employees.add(employee);
+
+            index++;
         }
-        return properties;
+
+        return employees;
     }
 }
