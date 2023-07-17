@@ -1,18 +1,19 @@
 @Configuration
 @EnableScheduling
 public class CryptoConfig {
-    private String panHmacKey;
+    private CryptoUtil cryptoUtil;
 
     @Bean
-    public CryptoUtil cryptoUtil() throws NoSuchAlgorithmException, InvalidKeyException {
-        return new CryptoUtil(panHmacKey);
+    public CryptoUtil cryptoUtil() {
+        return cryptoUtil;
     }
 
-    @Scheduled(fixedRate = 24 * 60 * 60 * 1000) // Run every 24 hours
-    public void generatePanHmacKey() {
+    @Scheduled(fixedRate = 15000) // Run every 15 seconds
+    public void updateCryptoUtil() throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] randomBytes = new byte[512];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(randomBytes);
-        panHmacKey = new String(randomBytes, StandardCharsets.UTF_8);
+        String panHmacKey = new String(randomBytes, StandardCharsets.UTF_8);
+        this.cryptoUtil = new CryptoUtil(panHmacKey);
     }
 }
