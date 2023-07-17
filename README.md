@@ -1,19 +1,47 @@
-@Configuration
-@EnableScheduling
-public class CryptoConfig {
-    private CryptoUtil cryptoUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.scheduling.annotation.Scheduled;
 
-    @Bean
-    public CryptoUtil cryptoUtil() {
-        return cryptoUtil;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class CryptoConfigTest {
+
+    private CryptoConfig cryptoConfig;
+
+    @Mock
+    private MyService myService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+        cryptoConfig = new CryptoConfig();
+        cryptoConfig.setMyService(myService);
     }
 
-    @Scheduled(fixedRate = 15000) // Run every 15 seconds
-    public void updateCryptoUtil() throws NoSuchAlgorithmException, InvalidKeyException {
+    @Test
+    public void testUpdateCryptoUtil() throws NoSuchAlgorithmException, InvalidKeyException {
+        // Mocking SecureRandom and generating a test panHmacKey
+        SecureRandom secureRandomMock = Mockito.mock(SecureRandom.class);
         byte[] randomBytes = new byte[512];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(randomBytes);
-        String panHmacKey = new String(randomBytes, StandardCharsets.UTF_8);
-        this.cryptoUtil = new CryptoUtil(panHmacKey);
+        secureRandomMock.nextBytes(randomBytes);
+
+        // Mocking the MyService dependency
+        CryptoUtil cryptoUtilMock = Mockito.mock(CryptoUtil.class);
+        Mockito.when(myService.getCryptoUtil()).thenReturn(cryptoUtilMock);
+
+        // Invoking the updateCryptoUtil method
+        cryptoConfig.updateCryptoUtil();
+
+        // Verifying that the panHmacKey is set and passed to the MyService dependency
+        Mockito.verify(myService).setCryptoUtil(Mockito.any(CryptoUtil.class));
+        assertEquals(new String(randomBytes, StandardCharsets.UTF_8), cryptoConfig.getCryptoUtil().getPanHmacKey());
     }
 }
