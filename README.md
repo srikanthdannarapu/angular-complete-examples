@@ -1,53 +1,36 @@
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
-import java.util.Arrays;
-import java.util.List;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+Outbox Scheduler Implementation Notes
+Overview
+The Outbox Scheduler is responsible for managing the execution of various processes related to the Outbox pattern. It allows stopping both the Near Real-Time (NRT) Consumer and the Event Entity Consumer based on the stop flag in the database. This feature is designed to facilitate application control during deployment and other activities as needed.
 
-@RunWith(MockitoJUnitRunner.class)
-public class CryptoConfigTest {
-    @Mock
-    private MyService myService;
+Implementation Steps
+1. Create a New Outbox Scheduler
+Develop a new scheduler that runs at a pre-configured interval.
+This scheduler will handle the logic to stop both the NRT Consumer and the Event Entity Consumer based on the stop flag status in the database.
+2. Inject ConfigurableEnvironment
+Inject the ConfigurableEnvironment object into the newly created scheduler to access application configuration properties.
+3. Modify Configuration Property
+Locate the property outbox.scheduler.enabled in the application configuration.
+Set the property as follows based on the stop flag status:
+Set to "true" if the stop flag is disabled, indicating that the application should continue running.
+Set to "false" if the stop flag is enabled, indicating that the application should be stopped.
+Changes in mastercard.outbox.binder.core Library
+The following changes are required in the mastercard.outbox.binder.core library to ensure the conditional execution of the Outbox Schedulers:
 
-    @InjectMocks
-    private CryptoConfig cryptoConfig;
+OutboxMessageProcessor: Update the scheduler to run conditionally based on the value of outbox.scheduler.enabled.
 
-    @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
-    }
+OutboxMessagePurger: Update the scheduler to run conditionally based on the value of outbox.scheduler.enabled.
 
-    @Test
-    public void testUpdateCryptoUtil() throws NoSuchAlgorithmException, InvalidKeyException {
-        CryptoUtil cryptoUtilMock = Mockito.mock(CryptoUtil.class);
-        when(myService.getCryptoUtil()).thenReturn(cryptoUtilMock);
+OutboxMessageReProcessor: Update the scheduler to run conditionally based on the value of outbox.scheduler.enabled.
 
-        // Stubbing behavior for the loadPanCache method of MyService
-        Mockito.doAnswer(invocation -> {
-            // Simulate the behavior of loading pan cache
-            List<String> accounts = Arrays.asList("abc", "123");
-            for (String account : accounts) {
-                String hashedPan = cryptoUtilMock.hashPan(account);
-                // Add the hashedPan to the cache
-                // In a real scenario, you would need a real implementation of MyService
-                // to populate the cache properly, this is just for testing purposes.
-            }
-            return null;
-        }).when(myService).loadPanCache();
+Additional Notes
+Ensure that the Outbox Scheduler is properly tested in various scenarios, including enabling and disabling the stop flag.
+Consider implementing appropriate error handling and logging to provide visibility into the scheduler's behavior.
+Conclusion
+The Outbox Scheduler enhances the application's control and management during deployment and other activities by allowing the dynamic stopping of key components based on the stop flag status in the database.
 
-        cryptoConfig.updateCryptoUtil();
+Feel free to copy and paste this template into your Confluence page and customize it further to match your organization's documentation style and formatting preferences. Don't forget to include any relevant diagrams, code snippets, or additional details that might be important for your team to understand and implement the Outbox Scheduler effectively.
 
-        // Verify that setCryptoUtil and loadPanCache methods were called once
-        verify(myService).setCryptoUtil(Mockito.any(CryptoUtil.class));
-        verify(myService).loadPanCache();
-    }
-}
+
+
+
+
