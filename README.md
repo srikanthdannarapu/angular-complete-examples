@@ -1,70 +1,19 @@
-# CD_DTL Oracle Table Enhancement
+Cons of Using LISTENER Column:
 
-## Introduction
+Lack of Clarity with Multiple Listeners: As the number of event listeners increases, the LISTENER column approach can become challenging to manage. It might be difficult to remember which specific listener corresponds to a particular value in the column. This lack of clarity can lead to confusion and potential mistakes when configuring or managing the listeners.
 
-The CD_DTL Oracle Table Enhancement project aims to enhance the existing CD_DTL table by adding columns that facilitate the control and management of event listeners and features in a dynamic system. This README provides an overview of the project, implementation details, and considerations for using the added columns.
+Maintenance Complexity: When using the LISTENER column, future maintenance tasks can become complex. If you need to stop or modify specific listeners, you would have to maintain a separate mapping or documentation that outlines which listener corresponds to each value in the column. This added complexity can make it harder to troubleshoot issues or update the system.
 
-## Table of Contents
+Limited Flexibility: The LISTENER column approach provides individual control over listeners, but it might lack the flexibility to accommodate scenarios where listeners need to be grouped or controlled collectively. For example, if you need to stop multiple related listeners simultaneously, the individual nature of the LISTENER column might not provide an efficient solution.
 
-- [Features](#features)
-- [Implementation](#implementation)
-- [Usage](#usage)
-- [Pros and Cons](#pros-and-cons)
-- [Contributing](#contributing)
-- [License](#license)
+Scalability Challenges: As your system grows and more listeners are added, the LISTENER column approach can become unwieldy. You might end up with a long list of values in the column, each corresponding to a specific listener. This could lead to reduced readability and maintainability of both the database and the consumer code.
 
-## Features
+Increased Risk of Errors: Due to the lack of clarity and potential maintenance complexity, there's an increased risk of errors when managing listeners using the LISTENER column. Mistakes in updating the column's values or in correlating them with specific listeners could result in unintended consequences, such as stopping the wrong listeners or leaving some listeners active when they should be stopped.
 
-The enhancement involves adding one of the following columns to the CD_DTL table:
+Less Clear Organization: Unlike the FEATURE column, which provides a clear categorization of different features, the LISTENER column might not provide the same level of organizational clarity. This can make it harder to understand at a glance which listeners are associated with which values, especially for new developers joining the project.
 
-- **FEATURE:** This column allows controlling various system features. Supported values include `ALL`, `PAN_REFRESH`, and `OUT_BOX_SCHEDULER`.
+In summary, while the LISTENER column approach offers granular control over individual event listeners, it comes with significant drawbacks related to maintainability, scalability, and potential confusion. Careful documentation and clear naming conventions might help mitigate some of these cons, but it's important to weigh the trade-offs against the benefits when deciding between the FEATURE and LISTENER column approaches.
 
-- **LISTENER:** This column allows managing individual event listeners. Supported values include `NRT_LISTENER` and `ENTITY_EVENT_LISTENER`.
 
-The choice between these columns depends on the granularity of control needed for your system.
 
-## Implementation
 
-1. **Schema Modification:** The SQL queries to add the chosen column to the CD_DTL table can be found in the [schema.sql](schema.sql) file.
-
-2. **Data Population:** The newly added columns should be populated with appropriate default values or NULLs using SQL scripts or database tools.
-
-3. **Consumer Logic:** Update the consumer logic in your application to utilize the values in the FEATURE or LISTENER columns. Make necessary adjustments to handle start/stop actions based on these values.
-
-## Usage
-
-- To start using the enhanced table, follow these steps:
-  1. Run the schema modification query from [schema.sql](schema.sql) using your Oracle database tool.
-  2. Populate the new columns with default values or NULLs using SQL scripts or your preferred method.
-  3. Update your application's consumer logic to incorporate the new columns for managing features or listeners.
-
-## Pros and Cons
-
-### Using FEATURE Column
-
-**Pros:**
-- Clear differentiation between features.
-- Scalability and extensibility as the system evolves.
-- Flexibility to define different stop conditions.
-
-**Cons:**
-- Limited to feature control, might not be suitable for independent listener management.
-- Consumer logic could become complex as the number of features grows.
-
-### Using LISTENER Column
-
-**Pros:**
-- Granular control over individual listeners.
-- Simplicity when listeners have distinct stop conditions.
-
-**Cons:**
-- Lack of clarity with multiple listeners.
-- Maintenance complexity when managing individual listeners.
-
-## Contributing
-
-Contributions to this project are welcome! If you have any suggestions, improvements, or bug fixes, please open an issue or submit a pull request. For major changes, please discuss the proposed changes before making them.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
