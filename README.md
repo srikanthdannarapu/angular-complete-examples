@@ -1,21 +1,7 @@
-public static void main(String[] args) {
-        // Comma-separated string of fruits
-        String fruitsString = "MANGO,APPLE,INVALID_FRUIT";
+List<String> invalidFruits = Arrays.stream(fruitStrings)
+                .filter(fruitStr -> Arrays.stream(Fruit.values())
+                        .noneMatch(fruit -> fruit.name().equals(fruitStr)))
+                .collect(Collectors.toList());
 
-        // Create a map using Java 8 streams
-        Map<Fruit, Boolean> hashMap = Arrays.stream(Fruit.values())
-                .collect(Collectors.toMap(
-                        fruit -> fruit,
-                        fruit -> {
-                            if (fruitsString.contains(fruit.name())) {
-                                return true;
-                            } else {
-                                System.out.println("Invalid enum value found: " + fruit.name());
-                                return false;
-                            }
-                        }
-                ));
-
-        // Print the resulting map
-        System.out.println("HashMap: " + hashMap);
-    }
+        // Log the invalid fruits
+        invalidFruits.forEach(invalidFruit -> System.out.println("Invalid fruit found: " + invalidFruit));
